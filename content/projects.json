@@ -1,0 +1,59 @@
+[
+  {
+    "slug": "relaygraph-runtime",
+    "name": "RelayGraph Runtime",
+    "summary": "A resilient agent runtime with checkpoints, retries, and audit trails for high-stakes workflows.",
+    "explainLikeFriend": "It helps agents finish multi-step jobs without getting lost halfway through.",
+    "tags": ["LangGraph", "FastAPI", "Redis"],
+    "stars": 842,
+    "metricLabel": "Task completion",
+    "metricValue": "91.4%",
+    "sourceUrl": "https://github.com/whyujjwal",
+    "demoUrl": "https://whyujjwal.com",
+    "story": {
+      "problem": "Teams had agent demos but nothing safe enough for production. Runs failed mid-flight with no recovery state.",
+      "approach": "I built explicit execution graphs with state snapshots after each critical step and deterministic retry policies.",
+      "broke": "Initial retries amplified bad tool outputs. We had to add confidence checks before retries could continue.",
+      "worked": "Checkpointed execution plus guardrails cut silent failures and made incidents debuggable in minutes.",
+      "next": "I would add richer simulation tooling so teams can rehearse failure paths before launch."
+    }
+  },
+  {
+    "slug": "grounded-rag-lab",
+    "name": "Grounded RAG Lab",
+    "summary": "A production retrieval stack with quality scoring, reranking, and observability for support teams.",
+    "explainLikeFriend": "It makes sure the model answers from the right documents instead of guessing.",
+    "tags": ["Pinecone", "PostgreSQL", "Python"],
+    "stars": 604,
+    "metricLabel": "Retrieval precision",
+    "metricValue": "94.0%",
+    "sourceUrl": "https://github.com/whyujjwal",
+    "demoUrl": "https://whyujjwal.com",
+    "story": {
+      "problem": "Support automation was fast but wrong on edge cases, which made users trust it less each week.",
+      "approach": "I added hybrid retrieval, cross-encoder reranking, and confidence thresholds tied to escalation policies.",
+      "broke": "Chunking strategy overfit on short docs and degraded long form recall until we introduced adaptive windows.",
+      "worked": "Quality dashboards plus eval gates kept regressions out of production and improved answer trust.",
+      "next": "Next pass would include source-level freshness weighting for fast-changing docs."
+    }
+  },
+  {
+    "slug": "model-router-fabric",
+    "name": "Model Router Fabric",
+    "summary": "A policy-driven router that balances cost, latency, and quality across multiple LLM providers.",
+    "explainLikeFriend": "It picks the cheapest model that still gives the right answer for each request.",
+    "tags": ["TypeScript", "OpenAI", "Claude"],
+    "stars": 321,
+    "metricLabel": "Cost reduction",
+    "metricValue": "-58%",
+    "sourceUrl": "https://github.com/whyujjwal",
+    "demoUrl": "https://whyujjwal.com",
+    "story": {
+      "problem": "A single-model setup was predictable but expensive, and it still missed quality targets on complex requests.",
+      "approach": "I added request classification, route scoring, and fallback trees with per-route observability.",
+      "broke": "Early classifiers were unstable on mixed-language inputs, so route churn spiked latency.",
+      "worked": "Route caching and calibration stabilized choices and cut spend without quality loss.",
+      "next": "I would add more continuous learning signals from human review outcomes."
+    }
+  }
+]

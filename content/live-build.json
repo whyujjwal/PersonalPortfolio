@@ -1,0 +1,12 @@
+{
+  "name": "NeuralSearch v2",
+  "summary": "Semantic retrieval engine for private codebases with low-latency context routing.",
+  "status": "shipping",
+  "weekNumber": "04",
+  "week": "Week 4 of build",
+  "progress": 74,
+  "commits": 47,
+  "stars": 12,
+  "githubUrl": "https://github.com/whyujjwal",
+  "logUrl": "/writing/rag-production-garbage"
+}

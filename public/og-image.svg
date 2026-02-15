@@ -1,0 +1,22 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0A0E27" />
+      <stop offset="100%" stop-color="#0D1538" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <rect x="64" y="64" width="1072" height="502" rx="20" fill="#111827" stroke="#1F2937" />
+  <text x="120" y="235" fill="#F9FAFB" font-size="92" font-family="Inter, Arial, sans-serif" font-weight="700">
+    why ujjwal?
+  </text>
+  <text x="120" y="320" fill="#9CA3AF" font-size="36" font-family="Inter, Arial, sans-serif">
+    I build things that work, break things that do not,
+  </text>
+  <text x="120" y="372" fill="#9CA3AF" font-size="36" font-family="Inter, Arial, sans-serif">
+    and write about all of it.
+  </text>
+  <text x="120" y="474" fill="#06B6D4" font-size="32" font-family="JetBrains Mono, monospace">
+    whyujjwal.com
+  </text>
+</svg>

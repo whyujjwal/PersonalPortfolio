@@ -1,0 +1,123 @@
+[
+  {
+    "slug": "rag-production-garbage",
+    "title": "Most RAG Systems in Production Are Garbage. Here Is Why.",
+    "date": "Feb 2026",
+    "minutes": 8,
+    "views": "1.2k",
+    "reactions": 184,
+    "excerpt": "The real failure mode is not hallucination. It is retrieval confidence that nobody measures.",
+    "tags": ["rag", "llmops"],
+    "sections": [
+      {
+        "heading": "The mismatch nobody tracks",
+        "body": "Most teams monitor model latency and token costs but ignore retrieval quality drift. That is where trust collapses."
+      },
+      {
+        "heading": "What fixed it for us",
+        "body": "We shipped evaluation gates with precision at k and route confidence, then blocked weak answers from reaching users.",
+        "code": "const gate = score.retrieval >= 0.72 && score.answer >= 0.68;\nif (!gate) return escalateToHuman();"
+      },
+      {
+        "heading": "The practical rule",
+        "body": "Do not push RAG to production until you can explain your retrieval failure rate by category and by data source."
+      }
+    ]
+  },
+  {
+    "slug": "finetune-worse-than-prompting",
+    "title": "I Fine-Tuned a Model and It Was Worse Than Prompting. Here Is What I Learned.",
+    "date": "Feb 2026",
+    "minutes": 12,
+    "views": "980",
+    "reactions": 139,
+    "excerpt": "Fine-tuning made outputs more confident and less correct. Better evals changed the outcome.",
+    "tags": ["models", "evaluation"],
+    "sections": [
+      {
+        "heading": "The expensive mistake",
+        "body": "We optimized for style consistency and ignored edge case recall. The model looked cleaner but broke on real traffic."
+      },
+      {
+        "heading": "Recovery path",
+        "body": "We kept base prompting, added retrieval grounding, and introduced failure routing to smaller specialist prompts."
+      },
+      {
+        "heading": "Takeaway",
+        "body": "Fine-tuning is a tool. It is not a strategy. Evaluation design is the strategy."
+      }
+    ]
+  },
+  {
+    "slug": "agents-built-wrong",
+    "title": "The AI Agent Hype Is Real But Everyone Is Building Them Wrong.",
+    "date": "Mar 2026",
+    "minutes": 6,
+    "views": "1.6k",
+    "reactions": 207,
+    "excerpt": "Agents fail because teams design for happy paths and call it autonomy.",
+    "tags": ["agents", "systems"],
+    "sections": [
+      {
+        "heading": "Autonomy without controls",
+        "body": "Most agent stacks skip explicit boundaries, so failure cascades look random and impossible to debug."
+      },
+      {
+        "heading": "What changed reliability",
+        "body": "Structured planners, hard budget limits, and mandatory checkpoints before external side effects."
+      },
+      {
+        "heading": "What to do next",
+        "body": "Treat agents like distributed systems. If you cannot reason about state transitions, do not ship."
+      }
+    ]
+  },
+  {
+    "slug": "junior-dev-death-exaggerated",
+    "title": "The Death of the Junior Dev Is Exaggerated.",
+    "date": "Mar 2026",
+    "minutes": 7,
+    "views": "850",
+    "reactions": 102,
+    "excerpt": "Automation shifts entry-level work, but systems thinking and debugging are still high-value skills.",
+    "tags": ["career", "systems"],
+    "sections": [
+      {
+        "heading": "What changed",
+        "body": "Routine implementation is easier with AI tooling, but production readiness still needs human judgment."
+      },
+      {
+        "heading": "What did not change",
+        "body": "The teams that move fastest still depend on engineers who can isolate failures and reason about tradeoffs."
+      },
+      {
+        "heading": "Practical advice",
+        "body": "Build in public, ship small systems weekly, and write what you learn. That compounds quickly."
+      }
+    ]
+  },
+  {
+    "slug": "pytorch-to-jax-retrospective",
+    "title": "Switching from PyTorch to JAX: A Retrospective.",
+    "date": "Apr 2026",
+    "minutes": 9,
+    "views": "640",
+    "reactions": 91,
+    "excerpt": "JAX improved a narrow part of the stack, but migration cost was real and easy to underestimate.",
+    "tags": ["models", "infra"],
+    "sections": [
+      {
+        "heading": "Why we switched",
+        "body": "We needed better control over compilation and throughput for repeat batch workloads."
+      },
+      {
+        "heading": "Unexpected friction",
+        "body": "Library compatibility and team familiarity slowed delivery more than benchmark docs suggested."
+      },
+      {
+        "heading": "What I would repeat",
+        "body": "Pilot migration on a single service first, prove value, then scale if operational complexity stays bounded."
+      }
+    ]
+  }
+]
