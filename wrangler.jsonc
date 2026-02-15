@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "whyujjwal",
+  "name": "whyujjwalportfolio",
   "main": ".open-next/worker.js",
   "build": {
     "command": "npm run cf:build"
