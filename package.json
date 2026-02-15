@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "deploy": "npm run cf:deploy",
     "start": "next start",
     "lint": "eslint",
     "content:check": "node scripts/validate-content.mjs",

@@ -63,6 +63,7 @@ This repo is configured for Cloudflare with:
 
 - `open-next.config.ts`
 - `wrangler.jsonc` (`main` + `assets.directory` set to `.open-next/assets`)
+- `wrangler.jsonc` build hook (`build.command = "npm run cf:build"`) so direct `wrangler deploy` also works
 
 Build/deploy commands:
 
