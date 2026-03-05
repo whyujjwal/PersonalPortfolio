@@ -108,7 +108,7 @@ def custom_interpolate(x: jnp.ndarray, target_shape: tuple, mode: str = "bilinea
 JAX's functional paradigm and XLA compilation made stack traces harder to read. Debugging time increased ~40% during the transition.
 
 <Comparison>
-  <ComparisonSide label="PyTorch debugging" type="good">
+<ComparisonSide label="PyTorch debugging" type="good">
 
 Eager execution means errors happen at the exact line that caused them. Stack traces are readable. You can print intermediate values anywhere.
 
@@ -119,8 +119,8 @@ RuntimeError: mat1 and mat2 shapes
   File "model.py", line 42
 ```
 
-  </ComparisonSide>
-  <ComparisonSide label="JAX debugging" type="bad">
+</ComparisonSide>
+<ComparisonSide label="JAX debugging" type="bad">
 
 JIT compilation means errors happen during tracing, not execution. Error messages refer to the compiled graph, not your source code.
 
@@ -131,15 +131,14 @@ TracerArrayConversionError:
   ShapedArray(float32[32,64])
 ```
 
-  </ComparisonSide>
+</ComparisonSide>
 </Comparison>
 
 ### Team velocity impact
 
 Engineers who were productive in PyTorch needed 3-4 weeks to reach the same velocity in JAX:
 
-<Terminal title="team-metrics">
-{`$ python velocity_tracker.py --period transition
+<Terminal title="team-metrics" content={`$ python velocity_tracker.py --period transition
 
 Week 1: PRs merged: 3  (baseline: 8)  velocity: 37%
 Week 2: PRs merged: 5  (baseline: 8)  velocity: 62%
@@ -149,8 +148,7 @@ Week 5: PRs merged: 9  (baseline: 8)  velocity: 112%
 
 Week 1-2: Learning JAX idioms and debugging XLA
 Week 3: Writing idiomatic JAX (vmap, scan, jit)
-Week 5: Leveraging JAX-specific features for new gains`}
-</Terminal>
+Week 5: Leveraging JAX-specific features for new gains`} />
 
 ### Numerical parity
 

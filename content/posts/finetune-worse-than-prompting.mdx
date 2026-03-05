@@ -31,7 +31,7 @@ Confidence without correctness is worse than uncertainty. Users learn to distrus
 The root cause was subtle. Our training data had a distribution mismatch with production traffic:
 
 <Comparison>
-  <ComparisonSide label="Training data" type="bad">
+<ComparisonSide label="Training data" type="bad">
 
 - 2,400 carefully curated examples
 - Mostly common, straightforward queries
@@ -39,8 +39,8 @@ The root cause was subtle. Our training data had a distribution mismatch with pr
 - Uniform formatting and structure
 - ~5% edge cases
 
-  </ComparisonSide>
-  <ComparisonSide label="Production traffic" type="neutral">
+</ComparisonSide>
+<ComparisonSide label="Production traffic" type="neutral">
 
 - 50,000+ queries per month
 - Long tail of unusual, compound queries
@@ -48,7 +48,7 @@ The root cause was subtle. Our training data had a distribution mismatch with pr
 - Messy, incomplete user inputs
 - ~22% genuinely hard queries
 
-  </ComparisonSide>
+</ComparisonSide>
 </Comparison>
 
 The fine-tuned model learned to be confident and well-formatted on common queries. That same confidence carried over to uncommon queries where it should have been uncertain. The base model with prompting had a natural "I am not sure" behavior on hard queries. Fine-tuning trained that uncertainty out.
@@ -162,8 +162,7 @@ The sweet spot for fine-tuning: tasks where the output format is complex but the
 
 Before you fine-tune anything, answer these four questions:
 
-<Terminal title="fine-tune-decision">
-{`$ python should_i_finetune.py
+<Terminal title="fine-tune-decision" content={`$ python should_i_finetune.py
 
 Q1: Do you have >5000 training examples matching production?
     If NO -> stop. Use prompting + few-shot examples.
@@ -178,8 +177,7 @@ Q4: Is the regression budget acceptable?
     Fine-tuning always regresses some previously-correct answers.
     If zero regressions required -> stop. Use prompting.
 
-Result: Only proceed if all four answers are YES.`}
-</Terminal>
+Result: Only proceed if all four answers are YES.`} />
 
 ## Takeaway
 

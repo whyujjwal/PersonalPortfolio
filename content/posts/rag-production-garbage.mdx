@@ -29,15 +29,15 @@ When your retrieval layer silently degrades, the model still generates fluent an
 Here is what a typical monitoring dashboard looks like versus what it should look like:
 
 <Comparison>
-  <ComparisonSide label="What teams monitor" type="bad">
+<ComparisonSide label="What teams monitor" type="bad">
 
 - Model latency (p50, p95, p99)
 - Token usage and cost per query
 - Error rates (5xx, timeouts)
 - User satisfaction scores (lagging)
 
-  </ComparisonSide>
-  <ComparisonSide label="What they should monitor" type="good">
+</ComparisonSide>
+<ComparisonSide label="What they should monitor" type="good">
 
 - Retrieval precision at k (per source)
 - Chunk relevance confidence scores
@@ -45,7 +45,7 @@ Here is what a typical monitoring dashboard looks like versus what it should loo
 - Per-source retrieval quality trends
 - Answer grounding ratio
 
-  </ComparisonSide>
+</ComparisonSide>
 </Comparison>
 
 <Callout type="warning">
@@ -161,8 +161,7 @@ Do not push RAG to production until you can explain your retrieval failure rate 
 
 If you cannot answer "what percentage of queries return irrelevant chunks, and from which sources?" — you are not ready to ship.
 
-<Terminal title="rag-eval">
-{`$ python eval_retrieval.py --sample 100 --week 2026-W07
+<Terminal title="rag-eval" content={`$ python eval_retrieval.py --sample 100 --week 2026-W07
 Evaluating 100 sampled queries...
 
 Source: internal_docs    precision@5: 0.84  trend: +0.02
@@ -174,8 +173,7 @@ Overall precision@5: 0.79
 Queries with zero relevant chunks: 7/100
 
 customer_tickets source showing negative trend for 3 weeks.
-Recommend: re-index with updated chunking strategy.`}
-</Terminal>
+Recommend: re-index with updated chunking strategy.`} />
 
 <Callout type="info">
 Start with a simple eval: sample 100 queries per week, manually label retrieval quality, track the trend. This costs almost nothing and catches drift early.

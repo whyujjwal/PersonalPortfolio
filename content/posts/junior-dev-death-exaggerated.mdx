@@ -15,7 +15,7 @@ Every few months, someone with a large audience publishes a take: "Junior develo
 The narrative conflates "writing code" with "engineering." AI is very good at writing code. It is not good at engineering. The difference matters.
 
 <Comparison>
-  <ComparisonSide label="What AI does well" type="neutral">
+<ComparisonSide label="What AI does well" type="neutral">
 
 - Scaffolding components and boilerplate
 - Writing unit tests from specifications
@@ -24,8 +24,8 @@ The narrative conflates "writing code" with "engineering." AI is very good at wr
 - Explaining code and documentation
 - Pattern-matching on common problems
 
-  </ComparisonSide>
-  <ComparisonSide label="What still requires humans" type="good">
+</ComparisonSide>
+<ComparisonSide label="What still requires humans" type="good">
 
 - Deciding whether a feature should exist
 - Debugging production incidents with incomplete logs
@@ -34,7 +34,7 @@ The narrative conflates "writing code" with "engineering." AI is very good at wr
 - Understanding user context behind bug reports
 - Making tradeoffs between competing priorities
 
-  </ComparisonSide>
+</ComparisonSide>
 </Comparison>
 
 ## What changed
@@ -111,8 +111,7 @@ The difference is not that juniors are less valuable — it is that they reach p
 
 If you are hiring junior devs, stop testing whether they can write a binary search from memory. Start testing whether they can:
 
-<Terminal title="junior-eval">
-{`$ cat hiring_criteria.md
+<Terminal title="junior-eval" content={`$ cat hiring_criteria.md
 
 1. Debug a failing integration test with incomplete errors
    Can they form hypotheses? Do they read logs systematically?
@@ -127,8 +126,7 @@ If you are hiring junior devs, stop testing whether they can write a binary sear
    Do they verify AI output? Do they understand what was generated?
 
 5. Read and reason about unfamiliar code
-   Can they trace execution flow? Do they spot failure points?`}
-</Terminal>
+   Can they trace execution flow? Do they spot failure points?`} />
 
 <Callout type="warning">
 If your hiring process only tests whether candidates can write code, you are selecting for the skill that AI is best at automating. Test for the skills that remain high-value: debugging, systems reasoning, and tradeoff articulation.

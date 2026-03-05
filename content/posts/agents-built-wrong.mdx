@@ -29,7 +29,7 @@ Most agent stacks skip explicit boundaries, so failure cascades look random and 
 The pattern I see repeatedly: a team builds an agent that works on 10 demo queries, ships it, and is surprised when it goes off the rails in production. The problem is not the LLM — it is the lack of structural constraints.
 
 <Comparison>
-  <ComparisonSide label="How most agents are built" type="bad">
+<ComparisonSide label="How most agents are built" type="bad">
 
 - No budget limits on tokens or steps
 - No state tracking between actions
@@ -37,8 +37,8 @@ The pattern I see repeatedly: a team builds an agent that works on 10 demo queri
 - Hope-based error handling
 - Trust the LLM to be perfect every time
 
-  </ComparisonSide>
-  <ComparisonSide label="What actually works" type="good">
+</ComparisonSide>
+<ComparisonSide label="What actually works" type="good">
 
 - Explicit planning phase before execution
 - Hard budget limits on tokens and steps
@@ -46,7 +46,7 @@ The pattern I see repeatedly: a team builds an agent that works on 10 demo queri
 - Output validation against expected schema
 - Checkpoint and resume on failures
 
-  </ComparisonSide>
+</ComparisonSide>
 </Comparison>
 
 ```typescript title="better_agent.ts"
@@ -142,8 +142,7 @@ Treat every external action (API call, database write, email send) as a checkpoi
 
 You cannot debug what you cannot see. Agent failures are especially hard to debug because the state space is enormous — any combination of tool calls, in any order, with any arguments.
 
-<FileTree>
-{`agent-system/
+<FileTree content={`agent-system/
 ├── core/
 │   ├── planner.ts
 │   ├── executor.ts
@@ -164,8 +163,7 @@ You cannot debug what you cannot see. Agent failures are especially hard to debu
 └── tests/
     ├── golden-paths/
     ├── adversarial/
-    └── regression/`}
-</FileTree>
+    └── regression/`} />
 
 Every agent run produces a structured trace: the original query, each planning step, every tool call with arguments and responses, token usage per step, gate triggers, and the final validation result. This trace is the single most valuable debugging tool.
 
