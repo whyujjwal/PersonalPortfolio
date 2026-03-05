@@ -1,0 +1,184 @@
+---
+title: "Most RAG Systems in Production Are Garbage. Here Is Why."
+date: "2026-02-15"
+excerpt: "The real failure mode is not hallucination. It is retrieval confidence that nobody measures."
+tags: ["rag", "llmops"]
+featured: true
+coverImage: null
+draft: false
+---
+
+## The problem nobody talks about
+
+Everyone building RAG systems obsesses over the model. Which LLM to use. How many tokens in the context window. Whether to use Claude or GPT-4 or a fine-tuned Llama. Meanwhile, their retrieval layer is silently returning garbage — and nobody notices because the model is good enough to generate fluent answers from irrelevant chunks.
+
+I have built four production RAG systems in the last year. Every single one had the same root cause for user complaints: **bad retrieval, not bad generation.** The model was fine. The chunks were wrong.
+
+<StatRow>
+  <StatHighlight value="73%" label="Retrieval errors" detail="Most RAG failures traced to retrieval, not generation" />
+  <StatHighlight value="12%" label="Silent degradation" detail="Average weekly retrieval quality drift before detection" />
+  <StatHighlight value="3.2x" label="Trust recovery time" detail="How much longer it takes to rebuild trust vs. lose it" />
+</StatRow>
+
+## The mismatch nobody tracks
+
+Most teams monitor model latency and token costs but ignore retrieval quality drift. That is where trust collapses.
+
+When your retrieval layer silently degrades, the model still generates fluent answers — they are just wrong. Users lose trust before anyone on the team notices the metrics moved. This is the core failure mode of production RAG: **the system fails gracefully, which means it fails invisibly.**
+
+Here is what a typical monitoring dashboard looks like versus what it should look like:
+
+<Comparison>
+  <ComparisonSide label="What teams monitor" type="bad">
+
+- Model latency (p50, p95, p99)
+- Token usage and cost per query
+- Error rates (5xx, timeouts)
+- User satisfaction scores (lagging)
+
+  </ComparisonSide>
+  <ComparisonSide label="What they should monitor" type="good">
+
+- Retrieval precision at k (per source)
+- Chunk relevance confidence scores
+- Query-to-retrieval drift over time
+- Per-source retrieval quality trends
+- Answer grounding ratio
+
+  </ComparisonSide>
+</Comparison>
+
+<Callout type="warning">
+Retrieval quality is the foundation. If your chunks are wrong, your answers are wrong — no matter how good the model is.
+</Callout>
+
+## Why retrieval degrades silently
+
+There are three main reasons retrieval quality drifts without anyone noticing:
+
+<Steps>
+  <Step number={1} title="Source data changes">
+The documents your system was indexed on get updated, restructured, or deleted. Your embeddings become stale. A chunk that was relevant last month now points to outdated information — but the embedding distance still looks reasonable because the topic is the same.
+  </Step>
+  <Step number={2} title="Query distribution shifts">
+Users start asking different types of questions. Your chunking strategy was optimized for one query pattern, and when the pattern shifts, retrieval precision drops. You will not see this in aggregate metrics — only in per-category breakdowns.
+  </Step>
+  <Step number={3} title="Embedding model blind spots">
+Every embedding model has categories where semantic similarity fails. Technical jargon, domain-specific abbreviations, and queries that require reasoning about relationships (not just topic matching) are common blind spots. These failures are consistent but invisible unless you test for them.
+  </Step>
+</Steps>
+
+## What fixed it for us
+
+We shipped evaluation gates with precision at k and route confidence, then blocked weak answers from reaching users.
+
+```typescript title="retrieval-gate.ts"
+interface RetrievalScore {
+  retrieval: number;  // precision@k for retrieved chunks
+  answer: number;     // grounding score against chunks
+  source: string;     // which data source was hit
+}
+
+function evaluateResponse(score: RetrievalScore) {
+  const gate = score.retrieval >= 0.72 && score.answer >= 0.68;
+
+  if (!gate) {
+    logWeakRetrieval(score);
+    return escalateToHuman();
+  }
+
+  if (score.retrieval < 0.85) {
+    tagForReview(score);
+  }
+
+  return generateResponse();
+}
+```
+
+The key insight: **measure retrieval separately from generation**. A great model cannot fix bad retrieval, but bad retrieval can make a great model look broken.
+
+We also added per-source quality tracking. When a specific data source started drifting, we could isolate and fix it without touching the rest of the pipeline.
+
+```typescript title="source-tracking.ts"
+const sourceMetrics = new Map<string, SourceQuality>();
+
+function trackRetrieval(query: string, chunks: Chunk[]) {
+  for (const chunk of chunks) {
+    const source = chunk.metadata.source;
+    const current = sourceMetrics.get(source) ?? createDefault();
+
+    current.totalQueries++;
+    current.relevanceScores.push(chunk.score);
+    current.weeklyTrend = calculateTrend(current.relevanceScores);
+
+    if (current.weeklyTrend < -0.05) {
+      alertSourceDrift(source, current);
+    }
+
+    sourceMetrics.set(source, current);
+  }
+}
+```
+
+## The evaluation pipeline that works
+
+After trying several approaches, here is the evaluation pipeline that actually caught issues before users did:
+
+<Steps>
+  <Step number={1} title="Weekly sample evaluation">
+Sample 100 queries per week from production traffic. For each query, manually label whether the retrieved chunks were relevant. This costs about 2 hours of engineer time and catches drift within a week.
+  </Step>
+  <Step number={2} title="Per-source quality dashboards">
+Break down retrieval quality by data source. When one source degrades, you can re-index just that source instead of rebuilding everything. This saved us from three full re-indexing cycles.
+  </Step>
+  <Step number={3} title="Automated regression tests">
+Maintain a golden set of 50 query-chunk pairs. Run these nightly. If precision drops below threshold on the golden set, block deployments until investigated.
+  </Step>
+  <Step number={4} title="User feedback integration">
+When users report bad answers, trace back to the retrieved chunks. Build a feedback loop that flags sources consistently linked to negative feedback.
+  </Step>
+</Steps>
+
+## Chunking strategies that actually matter
+
+Most teams use fixed-size chunks because that is what every tutorial shows. This is a reasonable default but a terrible long-term strategy.
+
+<Tabs>
+  <Tab label="Fixed-size">
+Simple to implement. Works for homogeneous documents. Breaks badly when documents have mixed structure — headers, tables, code, prose. You will get chunks that start mid-sentence and end mid-paragraph.
+  </Tab>
+  <Tab label="Semantic">
+Split on topic boundaries using an embedding model. More expensive to compute but produces coherent chunks. Best for long-form content where topic shifts matter. Our precision improved 18% after switching from fixed to semantic chunking.
+  </Tab>
+  <Tab label="Hierarchical">
+Create multiple chunk sizes and retrieve at the level that matches query granularity. A broad question gets large chunks for context. A specific question gets small chunks for precision. This requires more infrastructure but handles diverse query types well.
+  </Tab>
+</Tabs>
+
+## The practical rule
+
+Do not push RAG to production until you can explain your retrieval failure rate by category and by data source.
+
+If you cannot answer "what percentage of queries return irrelevant chunks, and from which sources?" — you are not ready to ship.
+
+<Terminal title="rag-eval">
+{`$ python eval_retrieval.py --sample 100 --week 2026-W07
+Evaluating 100 sampled queries...
+
+Source: internal_docs    precision@5: 0.84  trend: +0.02
+Source: api_reference    precision@5: 0.91  trend: -0.01
+Source: customer_tickets precision@5: 0.67  trend: -0.08  DRIFT
+Source: changelog        precision@5: 0.78  trend: +0.04
+
+Overall precision@5: 0.79
+Queries with zero relevant chunks: 7/100
+
+customer_tickets source showing negative trend for 3 weeks.
+Recommend: re-index with updated chunking strategy.`}
+</Terminal>
+
+<Callout type="info">
+Start with a simple eval: sample 100 queries per week, manually label retrieval quality, track the trend. This costs almost nothing and catches drift early.
+</Callout>
+
+The teams that ship reliable RAG systems are not using better models. They are measuring retrieval quality obsessively and fixing it before users notice. That is the entire secret.

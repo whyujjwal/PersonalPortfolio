@@ -1,0 +1,19 @@
+.section-label {
+  margin: 0 0 18px;
+  color: var(--text-muted);
+  font-family: var(--font-mono), "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: lowercase;
+}
+
+.section-title {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.14;
+  letter-spacing: -0.03em;
+}
+
+.inline-link {
+  color: var(--accent);
+}

@@ -3,6 +3,9 @@ import { CommandMenu } from "@/components/command-menu";
 import { SiteEffects } from "@/components/site-effects";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteNav } from "@/components/site-nav";
+import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
+import { getAllPostMeta } from "@/lib/mdx";
+import { inter, jetbrainsMono } from "@/lib/fonts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -44,13 +47,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body>
-        <SiteNav />
-        <CommandMenu />
-        <SiteEffects />
-        {children}
-        <SiteFooter />
+        <SmoothScrollProvider>
+          <SiteNav />
+          <CommandMenu posts={getAllPostMeta()} />
+          <SiteEffects />
+          {children}
+          <SiteFooter />
+        </SmoothScrollProvider>
       </body>
     </html>
   );

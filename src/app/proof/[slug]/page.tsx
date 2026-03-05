@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { TextReveal } from "@/components/animation/text-reveal";
+import { ScrollReveal } from "@/components/animation/scroll-reveal";
+import { MagneticElement } from "@/components/animation/magnetic-element";
 import { getProject, projects } from "@/lib/content";
 
 type Props = {
@@ -38,54 +41,60 @@ export default async function ProofStoryPage({ params }: Props) {
     <main className="subpage-main">
       <section className="subpage-hero">
         <div className="site-shell">
-          <p className="section-label" data-reveal>
-            {"// proof story"}
-          </p>
-          <h1 data-reveal>{project.name}</h1>
-          <p className="subpage-copy" data-reveal>
-            {project.summary}
-          </p>
-          <div className="proof-metrics" data-reveal>
-            <span>{project.stars} stars</span>
-            <span>
-              {project.metricValue} {project.metricLabel.toLowerCase()}
-            </span>
-          </div>
+          <TextReveal variant="fade">
+            <p className="section-label">{"// proof story"}</p>
+          </TextReveal>
+          <TextReveal variant="chars" stagger={0.015}>
+            <h1>{project.name}</h1>
+          </TextReveal>
+          <TextReveal variant="words" delay={0.2}>
+            <p className="subpage-copy">{project.summary}</p>
+          </TextReveal>
+          <ScrollReveal delay={0.3}>
+            <div className="proof-metrics">
+              <span>{project.stars} stars</span>
+              <span>
+                {project.metricValue} {project.metricLabel.toLowerCase()}
+              </span>
+            </div>
+          </ScrollReveal>
         </div>
       </section>
 
       <section className="section-wrap">
-        <article className="site-shell post-story" data-reveal>
-          <section className="post-section">
-            <h2>What problem I saw</h2>
-            <p>{project.story.problem}</p>
-          </section>
-          <section className="post-section">
-            <h2>How I thought about solving it</h2>
-            <p>{project.story.approach}</p>
-          </section>
-          <section className="post-section">
-            <h2>What broke</h2>
-            <p>{project.story.broke}</p>
-          </section>
-          <section className="post-section">
-            <h2>What worked</h2>
-            <p>{project.story.worked}</p>
-          </section>
-          <section className="post-section">
-            <h2>What I would do differently</h2>
-            <p>{project.story.next}</p>
-          </section>
+        <article className="site-shell post-story">
+          {[
+            { heading: "What problem I saw", body: project.story.problem },
+            { heading: "How I thought about solving it", body: project.story.approach },
+            { heading: "What broke", body: project.story.broke },
+            { heading: "What worked", body: project.story.worked },
+            { heading: "What I would do differently", body: project.story.next },
+          ].map((section, i) => (
+            <ScrollReveal key={section.heading} delay={i * 0.05}>
+              <section className="post-section">
+                <h2>{section.heading}</h2>
+                <p>{section.body}</p>
+              </section>
+            </ScrollReveal>
+          ))}
 
-          <div className="post-bottom-links">
-            <Link href={project.sourceUrl} target="_blank" rel="noopener noreferrer">
-              source
-            </Link>
-            <Link href={project.demoUrl} target="_blank" rel="noopener noreferrer">
-              demo
-            </Link>
-            <Link href="/proof">back to proof</Link>
-          </div>
+          <ScrollReveal>
+            <div className="post-bottom-links">
+              <MagneticElement>
+                <Link href={project.sourceUrl} target="_blank" rel="noopener noreferrer">
+                  source
+                </Link>
+              </MagneticElement>
+              <MagneticElement>
+                <Link href={project.demoUrl} target="_blank" rel="noopener noreferrer">
+                  demo
+                </Link>
+              </MagneticElement>
+              <MagneticElement>
+                <Link href="/proof">back to proof</Link>
+              </MagneticElement>
+            </div>
+          </ScrollReveal>
         </article>
       </section>
     </main>

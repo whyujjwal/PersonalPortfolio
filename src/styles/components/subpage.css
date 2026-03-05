@@ -1,0 +1,65 @@
+.subpage-main {
+  min-height: 100svh;
+}
+
+.subpage-hero {
+  padding: 140px 0 80px;
+  border-bottom: 1px solid var(--border);
+}
+
+.subpage-hero h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 6vw, 4.4rem);
+  line-height: 1.1;
+}
+
+.subpage-copy {
+  margin: 14px 0 0;
+  max-width: 760px;
+  color: var(--text-muted);
+}
+
+.post-story {
+  max-width: 800px;
+}
+
+.post-section + .post-section {
+  margin-top: 28px;
+}
+
+.post-section h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.post-section p {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+}
+
+.post-section pre {
+  margin-top: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  overflow-x: auto;
+  color: var(--text);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.post-bottom-links {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.post-bottom-links a {
+  color: var(--text);
+}
+
+.post-bottom-links a:hover {
+  color: var(--accent);
+}

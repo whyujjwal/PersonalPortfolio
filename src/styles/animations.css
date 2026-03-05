@@ -1,0 +1,21 @@
+@keyframes scroll-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    left: 0;
+  }
+  50% {
+    opacity: 1;
+    left: calc(100% - 18px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .scroll-dot {
+    animation: none;
+  }
+}

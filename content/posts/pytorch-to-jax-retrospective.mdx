@@ -1,0 +1,211 @@
+---
+title: "Switching from PyTorch to JAX: A Retrospective."
+date: "2026-04-01"
+excerpt: "JAX improved a narrow part of the stack, but migration cost was real and easy to underestimate."
+tags: ["models", "infra"]
+featured: false
+coverImage: null
+draft: false
+---
+
+## Why we considered switching
+
+Our inference pipeline ran the same model on thousands of inputs per hour. PyTorch's eager execution meant we were paying compilation overhead on every call. JAX's `jit` promised to eliminate that — compile once, run many times at near-hardware speed.
+
+<StatRow>
+  <StatHighlight value="~45ms" label="PyTorch eager" detail="Per-inference latency, includes overhead" />
+  <StatHighlight value="~12ms" label="JAX jit (warmed)" detail="After first compilation, subsequent calls" />
+  <StatHighlight value="3.7x" label="Throughput gain" detail="For batch workloads with repeated model calls" />
+</StatRow>
+
+For our specific workload — high-throughput batch inference with a stable model — the performance case was clear. But the migration story was more complex than any benchmark will tell you.
+
+## The decision framework
+
+Before diving into migration, we needed a framework for deciding whether it was worth the cost:
+
+<Tabs>
+  <Tab label="Performance analysis">
+We profiled our existing PyTorch pipeline to understand where time was actually spent:
+
+- **35%** — model forward pass (the part JAX would speed up)
+- **28%** — data preprocessing and tokenization
+- **22%** — I/O (loading batches, writing results)
+- **15%** — framework overhead (eager dispatch, memory management)
+
+JAX could improve the 35% forward pass and 15% framework overhead — roughly 50% of total pipeline time.
+  </Tab>
+  <Tab label="Cost estimation">
+We estimated migration cost across three dimensions:
+
+- **Engineering time:** 4-6 weeks for core migration, plus 2-3 weeks for testing
+- **Team ramp-up:** 3-4 weeks for engineers to reach PyTorch-equivalent velocity
+- **Ongoing cost:** maintaining custom implementations for missing utilities
+
+Total estimated: ~12 engineer-weeks. Actual: ~18 engineer-weeks. We underestimated by 50%.
+  </Tab>
+  <Tab label="Risk assessment">
+Key risks we identified (and how they played out):
+
+1. **Library gaps** — IDENTIFIED, UNDERESTIMATED
+2. **Numerical parity** — IDENTIFIED, UNDERESTIMATED
+3. **Team velocity** — IDENTIFIED, ACCURATELY ESTIMATED
+4. **Debugging difficulty** — NOT IDENTIFIED (biggest surprise)
+  </Tab>
+</Tabs>
+
+## The migration strategy
+
+We chose a phased approach: migrate one service at a time, starting with the highest-throughput, most stable service.
+
+<Steps>
+  <Step number={1} title="Pilot service selection">
+We picked our batch inference service — the one with the clearest performance bottleneck and simplest model architecture. It processed 12,000 inputs per hour and was compute-bound, not I/O-bound. Best-case scenario for JAX.
+  </Step>
+  <Step number={2} title="Parallel implementation">
+Instead of porting existing code, we reimplemented from scratch in JAX. This let us leverage JAX idioms — functional transforms, vmap, jit — instead of writing PyTorch-style code that happened to use JAX.
+  </Step>
+  <Step number={3} title="Parity testing">
+We ran both pipelines on 10,000 identical inputs and compared outputs. This is where numerical parity issues surfaced — ~0.3% of outputs differed beyond our tolerance threshold.
+  </Step>
+  <Step number={4} title="Shadow deployment">
+Both pipelines ran in production for two weeks, processing the same traffic in parallel. We compared outputs, latency, error rates, and resource utilization in real conditions.
+  </Step>
+  <Step number={5} title="Cutover">
+After two weeks with no significant discrepancies, we cut over to JAX. We kept the PyTorch implementation as a hot standby for one more month.
+  </Step>
+</Steps>
+
+## Unexpected friction
+
+Library compatibility and team familiarity slowed delivery more than benchmark docs suggested.
+
+<Callout type="warning">
+Migration benchmarks measure the best case. Production migration includes the worst case: library gaps, team ramp-up, debugging unfamiliar stack traces, and subtle numerical differences.
+</Callout>
+
+### Library ecosystem gaps
+
+Many PyTorch utilities had no JAX equivalent. We wrote custom implementations for three critical preprocessing steps:
+
+```python title="custom_preprocessing.py"
+import jax
+import jax.numpy as jnp
+
+def custom_interpolate(x: jnp.ndarray, target_shape: tuple, mode: str = "bilinear"):
+    """Replicates torch.nn.functional.interpolate behavior in JAX."""
+    if mode == "bilinear":
+        return jax.image.resize(x, target_shape, method="bilinear")
+    elif mode == "nearest":
+        return jax.image.resize(x, target_shape, method="nearest")
+    elif mode == "bicubic":
+        return _bicubic_resize(x, target_shape)
+    raise ValueError(f"Unsupported mode: {mode}")
+```
+
+### Debugging difficulty
+
+JAX's functional paradigm and XLA compilation made stack traces harder to read. Debugging time increased ~40% during the transition.
+
+<Comparison>
+  <ComparisonSide label="PyTorch debugging" type="good">
+
+Eager execution means errors happen at the exact line that caused them. Stack traces are readable. You can print intermediate values anywhere.
+
+```python
+RuntimeError: mat1 and mat2 shapes
+  cannot be multiplied (32x64 and
+  128x64)
+  File "model.py", line 42
+```
+
+  </ComparisonSide>
+  <ComparisonSide label="JAX debugging" type="bad">
+
+JIT compilation means errors happen during tracing, not execution. Error messages refer to the compiled graph, not your source code.
+
+```python
+TracerArrayConversionError:
+  Concrete value of traced array
+  Abstract tracer value:
+  ShapedArray(float32[32,64])
+```
+
+  </ComparisonSide>
+</Comparison>
+
+### Team velocity impact
+
+Engineers who were productive in PyTorch needed 3-4 weeks to reach the same velocity in JAX:
+
+<Terminal title="team-metrics">
+{`$ python velocity_tracker.py --period transition
+
+Week 1: PRs merged: 3  (baseline: 8)  velocity: 37%
+Week 2: PRs merged: 5  (baseline: 8)  velocity: 62%
+Week 3: PRs merged: 6  (baseline: 8)  velocity: 75%
+Week 4: PRs merged: 7  (baseline: 8)  velocity: 87%
+Week 5: PRs merged: 9  (baseline: 8)  velocity: 112%
+
+Week 1-2: Learning JAX idioms and debugging XLA
+Week 3: Writing idiomatic JAX (vmap, scan, jit)
+Week 5: Leveraging JAX-specific features for new gains`}
+</Terminal>
+
+### Numerical parity
+
+Subtle floating point differences between frameworks caused test failures that took days to diagnose. PyTorch and JAX use different default precision for certain operations, and their softmax implementations handle numerical stability slightly differently.
+
+```python title="parity_testing.py"
+import numpy as np
+
+def check_parity(pytorch_outputs: np.ndarray, jax_outputs: np.ndarray, rtol: float = 1e-5):
+    max_diff = np.max(np.abs(pytorch_outputs - jax_outputs))
+    mean_diff = np.mean(np.abs(pytorch_outputs - jax_outputs))
+    parity_rate = np.mean(np.isclose(pytorch_outputs, jax_outputs, rtol=rtol))
+
+    return {
+        "max_diff": max_diff,       # We saw: 2.3e-4
+        "mean_diff": mean_diff,     # We saw: 8.7e-6
+        "parity_rate": parity_rate, # We saw: 99.7%
+    }
+```
+
+## What I would repeat
+
+Pilot migration on a single service first, prove value, then scale if operational complexity stays bounded.
+
+The approach that worked: we migrated our highest-throughput, most stable service first. This gave us the biggest performance win with the least risk. Once that ran smoothly for a month, we had the confidence and team expertise to migrate the next service.
+
+## What I would change
+
+<Steps>
+  <Step number={1} title="Budget 50% more time than estimated">
+Every migration takes longer than you think. Library gaps, numerical parity issues, and debugging unfamiliar tools add up. Plan for the realistic case, not the optimistic one.
+  </Step>
+  <Step number={2} title="Invest in debugging tooling first">
+Before writing migration code, build tooling that helps debug JAX-specific issues. A custom tracer mapping XLA errors to source code would have saved weeks.
+  </Step>
+  <Step number={3} title="Run parity tests continuously">
+We discovered numerical issues during final validation, meaning we had to go back and fix code we thought was done. Continuous parity checks catch issues earlier.
+  </Step>
+</Steps>
+
+<Callout type="info">
+Framework migrations are never just about performance. They are about team capability, debugging speed, and ecosystem maturity. Measure all three before committing.
+</Callout>
+
+## The decision rule
+
+If the throughput improvement is less than 2x, the migration cost probably is not worth it. Our 3.7x improvement justified the pain. Marginal improvements would not have.
+
+| Question | Our answer |
+|----------|-----------|
+| Expected performance improvement? | 3.7x throughput on compute-bound workloads |
+| Pipeline time in bottleneck? | ~50% (forward pass + framework overhead) |
+| Engineer-weeks for migration? | 18 (estimated 12) |
+| Time to prior velocity? | 4 weeks |
+| Library gaps requiring custom code? | 3 critical preprocessing utilities |
+| Can both frameworks run in parallel? | Yes, 2-week shadow deployment |
+
+If you cannot answer these questions with data, run a one-week spike before committing. The cost of investigation is trivial compared to the cost of a failed migration.

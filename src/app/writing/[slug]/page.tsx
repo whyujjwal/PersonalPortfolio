@@ -2,69 +2,126 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ViewCount } from "@/components/view-count";
-import { getPost, posts } from "@/lib/content";
+import { TextReveal } from "@/components/animation/text-reveal";
+import { ScrollReveal } from "@/components/animation/scroll-reveal";
+import { ScrollProgress } from "@/components/animation/scroll-progress";
+import { TableOfContents } from "@/components/mdx/table-of-contents";
+import {
+  getAllPostMeta,
+  getCompiledPost,
+  getAdjacentPosts,
+  getRelatedPosts,
+} from "@/lib/mdx";
 
-type Props = {
-  params: Promise<{
-    slug: string;
-  }>;
-};
+type Props = { params: Promise<{ slug: string }> };
+
+const dateFmt = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
 
 export function generateStaticParams() {
-  return posts.map((post) => ({ slug: post.slug }));
+  return getAllPostMeta().map((p) => ({ slug: p.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPost(slug);
-  if (!post) {
-    return { title: "Post" };
-  }
-
-  return {
-    title: post.title,
-    description: post.excerpt,
-  };
+  const all = getAllPostMeta();
+  const meta = all.find((p) => p.slug === slug);
+  if (!meta) return { title: "Post" };
+  return { title: meta.title, description: meta.excerpt };
 }
 
 export default async function WritingPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = getPost(slug);
+  const compiled = await getCompiledPost(slug).catch(() => null);
 
-  if (!post) {
-    notFound();
-  }
+  if (!compiled) notFound();
+
+  const { content, meta } = compiled;
+  const { prev, next } = getAdjacentPosts(slug);
+  const related = getRelatedPosts(slug, 3);
 
   return (
     <main className="subpage-main">
+      <ScrollProgress />
+
       <section className="subpage-hero">
         <div className="site-shell">
-          <p className="section-label" data-reveal>
-            {"// writing"}
-          </p>
-          <h1 data-reveal>{post.title}</h1>
-          <p className="subpage-copy" data-reveal>
-            {post.date.toLowerCase()} | {post.minutes} min read |{" "}
-            <ViewCount slug={post.slug} fallback={post.views} increment /> views
-          </p>
+          <TextReveal variant="fade">
+            <p className="section-label">{"// writing"}</p>
+          </TextReveal>
+
+          <div className="blog-post-header">
+            <div className="blog-post-tags">
+              {meta.tags.map((tag) => (
+                <span key={tag} className="blog-post-tag">{tag}</span>
+              ))}
+            </div>
+
+            <TextReveal variant="chars" stagger={0.015}>
+              <h1 className="blog-post-title">{meta.title}</h1>
+            </TextReveal>
+
+            <TextReveal variant="words" delay={0.3}>
+              <div className="blog-post-meta">
+                <span>{dateFmt.format(new Date(meta.date))}</span>
+                <span>{meta.readingTime} min read</span>
+                <span><ViewCount slug={meta.slug} fallback="0" increment /> views</span>
+              </div>
+            </TextReveal>
+          </div>
         </div>
       </section>
 
       <section className="section-wrap">
-        <article className="site-shell post-story" data-reveal>
-          {post.sections.map((section) => (
-            <section key={section.heading} className="post-section">
-              <h2>{section.heading}</h2>
-              <p>{section.body}</p>
-              {section.code ? <pre>{section.code}</pre> : null}
-            </section>
-          ))}
+        <div className="site-shell">
+          <div className="blog-post-layout">
+            <article className="mdx-article">
+              {content}
 
-          <div className="post-bottom-links">
-            <Link href="/writing">back to writing</Link>
-            <Link href="/#lets-talk">let&apos;s talk</Link>
+              {(prev ?? next) && (
+                <nav className="blog-post-nav" aria-label="Post navigation">
+                  {prev ? (
+                    <Link href={`/writing/${prev.slug}`}>
+                      <span className="blog-nav-label">previous</span>
+                      <span className="blog-nav-title">{prev.title}</span>
+                    </Link>
+                  ) : <span />}
+                  {next ? (
+                    <Link href={`/writing/${next.slug}`}>
+                      <span className="blog-nav-label">next</span>
+                      <span className="blog-nav-title">{next.title}</span>
+                    </Link>
+                  ) : <span />}
+                </nav>
+              )}
+
+              {related.length > 0 && (
+                <ScrollReveal>
+                  <aside className="blog-related">
+                    <p className="blog-related-label">Related posts</p>
+                    <div className="blog-related-grid">
+                      {related.map((r) => (
+                        <Link key={r.slug} href={`/writing/${r.slug}`} className="blog-related-card">
+                          <span className="blog-related-card-title">{r.title}</span>
+                          <span className="blog-related-card-date">
+                            {dateFmt.format(new Date(r.date))}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </aside>
+                </ScrollReveal>
+              )}
+            </article>
+
+            <aside className="blog-post-sidebar">
+              <TableOfContents />
+            </aside>
           </div>
-        </article>
+        </div>
       </section>
     </main>
   );

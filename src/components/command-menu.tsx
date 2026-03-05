@@ -3,7 +3,9 @@
 import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { posts, projects } from "@/lib/content";
+import { projects } from "@/lib/content";
+
+type PostItem = { slug: string; title: string; excerpt: string; tags: string[]; readingTime: number };
 
 type Action = {
   id: string;
@@ -18,7 +20,7 @@ type Action = {
 
 const groupOrder: Action["group"][] = ["navigation", "actions", "writing", "proof"];
 
-export function CommandMenu() {
+export function CommandMenu({ posts }: { posts: PostItem[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [copyMeta, setCopyMeta] = useState("copy email");
@@ -130,7 +132,7 @@ export function CommandMenu() {
       label: post.title,
       group: "writing",
       icon: "WR",
-      meta: `${post.minutes} min`,
+      meta: `${post.readingTime} min`,
       keywords: `${post.tags.join(" ")} ${post.excerpt}`,
       run: () => router.push(`/writing/${post.slug}`),
     }));

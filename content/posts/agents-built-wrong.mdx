@@ -1,0 +1,198 @@
+---
+title: "The AI Agent Hype Is Real But Everyone Is Building Them Wrong."
+date: "2026-03-01"
+excerpt: "Agents fail because teams design for happy paths and call it autonomy."
+tags: ["agents", "systems"]
+featured: false
+coverImage: null
+draft: false
+---
+
+## The demo-to-production gap
+
+Every AI agent demo looks magical. The agent plans, reasons, calls tools, and produces the right answer. Then you ship it to real users and it goes off the rails within the first hour.
+
+The problem is not the LLM. The LLM is doing exactly what you asked it to do — make decisions with incomplete context and no guardrails. The problem is that most teams design agents for the happy path and call it autonomy.
+
+I have built three production agent systems. Each one taught me the same lesson: **agents are distributed systems, and you need to engineer them like distributed systems.** State machines, failure budgets, checkpoint gates — the boring infrastructure that makes the magic reliable.
+
+<StatRow>
+  <StatHighlight value="89%" label="Demo accuracy" detail="Typical agent accuracy on curated test queries" />
+  <StatHighlight value="34%" label="Production accuracy" detail="Same agent on real, unfiltered user queries" />
+  <StatHighlight value="5x" label="Reliability gap" detail="Effort to close the demo-to-production gap" />
+</StatRow>
+
+## Autonomy without controls
+
+Most agent stacks skip explicit boundaries, so failure cascades look random and impossible to debug.
+
+The pattern I see repeatedly: a team builds an agent that works on 10 demo queries, ships it, and is surprised when it goes off the rails in production. The problem is not the LLM — it is the lack of structural constraints.
+
+<Comparison>
+  <ComparisonSide label="How most agents are built" type="bad">
+
+- No budget limits on tokens or steps
+- No state tracking between actions
+- No validation on tool outputs
+- Hope-based error handling
+- Trust the LLM to be perfect every time
+
+  </ComparisonSide>
+  <ComparisonSide label="What actually works" type="good">
+
+- Explicit planning phase before execution
+- Hard budget limits on tokens and steps
+- Side-effect gates requiring approval
+- Output validation against expected schema
+- Checkpoint and resume on failures
+
+  </ComparisonSide>
+</Comparison>
+
+```typescript title="better_agent.ts"
+const plan = await agent.plan(userQuery);
+if (plan.steps > MAX_STEPS) return fallback();
+if (plan.hasSideEffects) await requireApproval(plan);
+const result = await agent.execute(plan, { budget: MAX_TOKENS });
+return validate(result);
+```
+
+## The five failure modes
+
+After debugging hundreds of agent failures in production, they almost always fall into five categories:
+
+<Steps>
+  <Step number={1} title="Infinite loops">
+The agent gets stuck in a plan-execute-replan cycle. It tries an approach, it fails, it replans with the same strategy, it fails again. Without a hard step limit, this runs until you hit token limits or timeout. **Fix:** hard step limits and loop detection. If the agent has tried the same tool call twice with similar arguments, break out.
+  </Step>
+  <Step number={2} title="Tool misuse">
+The agent calls the right tool with wrong arguments, or the wrong tool entirely. This is especially common with similar tools — search vs. lookup, update vs. create. **Fix:** strict tool schemas with validation, and few-shot examples in tool descriptions.
+  </Step>
+  <Step number={3} title="Context window poisoning">
+Early steps produce verbose output that fills the context window, pushing critical information out. By step 5, the agent has forgotten what it was trying to do. **Fix:** summarize intermediate results aggressively. Only carry forward what matters.
+  </Step>
+  <Step number={4} title="Uncontrolled side effects">
+The agent sends an email, updates a database, or calls an external API without validation. One bad decision becomes irreversible. **Fix:** gate every side-effecting action. The agent proposes, a validator approves.
+  </Step>
+  <Step number={5} title="Hallucinated capabilities">
+The agent claims to have done something it did not do, or invents tool responses. Rare but catastrophic. **Fix:** verify every tool response. If the agent claims success, check the actual output.
+  </Step>
+</Steps>
+
+## The architecture that works
+
+After three production systems, here is the architecture pattern that consistently produces reliable agents:
+
+```typescript title="agent-architecture.ts"
+interface AgentConfig {
+  maxSteps: number;
+  maxTokens: number;
+  maxToolCalls: number;
+  requireApprovalFor: string[];
+  checkpointInterval: number;
+}
+
+interface AgentState {
+  step: number;
+  phase: "planning" | "executing" | "validating" | "complete" | "failed";
+  plan: Step[];
+  results: Map<number, StepResult>;
+  tokensBurned: number;
+}
+
+async function runAgent(query: string, config: AgentConfig): Promise<AgentResult> {
+  let state: AgentState = initialize(query);
+
+  // Phase 1: Plan
+  state.phase = "planning";
+  state.plan = await generatePlan(query, config);
+
+  if (state.plan.length > config.maxSteps) {
+    return { status: "rejected", reason: "plan_too_complex" };
+  }
+
+  // Phase 2: Execute with gates
+  state.phase = "executing";
+  for (const step of state.plan) {
+    if (state.tokensBurned > config.maxTokens) {
+      return { status: "budget_exceeded", partial: state.results };
+    }
+
+    if (config.requireApprovalFor.includes(step.tool)) {
+      await requestHumanApproval(step);
+    }
+
+    const result = await executeStep(step, state);
+    state.results.set(step.id, result);
+    state.tokensBurned += result.tokensUsed;
+    state.step++;
+  }
+
+  // Phase 3: Validate
+  state.phase = "validating";
+  return validateAndReturn(state);
+}
+```
+
+<Callout type="info">
+Treat every external action (API call, database write, email send) as a checkpoint that requires explicit validation. Never let an agent auto-execute side effects without a gate.
+</Callout>
+
+## The observability layer
+
+You cannot debug what you cannot see. Agent failures are especially hard to debug because the state space is enormous — any combination of tool calls, in any order, with any arguments.
+
+<FileTree>
+{`agent-system/
+├── core/
+│   ├── planner.ts
+│   ├── executor.ts
+│   ├── validator.ts
+│   └── state-machine.ts
+├── tools/
+│   ├── registry.ts
+│   ├── schemas/
+│   └── validators/
+├── observability/
+│   ├── trace-logger.ts
+│   ├── step-recorder.ts
+│   └── replay-engine.ts
+├── gates/
+│   ├── budget-gate.ts
+│   ├── approval-gate.ts
+│   └── loop-detector.ts
+└── tests/
+    ├── golden-paths/
+    ├── adversarial/
+    └── regression/`}
+</FileTree>
+
+Every agent run produces a structured trace: the original query, each planning step, every tool call with arguments and responses, token usage per step, gate triggers, and the final validation result. This trace is the single most valuable debugging tool.
+
+## Testing agents is different
+
+Unit testing an agent is almost useless. The failure modes are emergent — they arise from sequences of decisions, not individual function calls. You need three types of tests:
+
+<Tabs>
+  <Tab label="Golden path">
+A set of 20-30 queries that represent your core use cases. Each query has an expected plan, expected tool calls, and expected output. Run these on every deploy. If any golden path breaks, block the deployment.
+  </Tab>
+  <Tab label="Adversarial">
+Queries designed to trigger failure modes: ambiguous queries, queries that require tools the agent does not have, queries that would cause infinite loops. These should fail gracefully — the agent should recognize it cannot help.
+  </Tab>
+  <Tab label="Regression">
+Every production failure becomes a regression test. When a user reports a bad response, capture the query, the trace, and expected behavior. This is how your test coverage grows — from real failures, not imagined ones.
+  </Tab>
+</Tabs>
+
+## What to do next
+
+Treat agents like distributed systems. If you cannot reason about state transitions, do not ship.
+
+The best mental model: an agent is a workflow engine with an LLM as the decision function. Build the workflow first, add the LLM second. Not the other way around.
+
+<Callout type="warning">
+If your agent does not have explicit budget limits, state checkpointing, and side-effect gates, it is a demo — not a production system. Ship the guardrails before you ship the agent.
+</Callout>
+
+The teams building reliable agents are spending 70% of their time on infrastructure and 30% on prompts. Most teams have this ratio inverted. Fix the ratio, and reliability follows.

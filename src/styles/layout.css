@@ -1,0 +1,20 @@
+.site-shell {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.section-wrap {
+  padding: 104px 0;
+  border-top: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .site-shell {
+    padding: 0 16px;
+  }
+
+  .section-wrap {
+    padding: 92px 0;
+  }
+}

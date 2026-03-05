@@ -1,0 +1,158 @@
+---
+title: "The Death of the Junior Dev Is Exaggerated."
+date: "2026-03-10"
+excerpt: "Automation shifts entry-level work, but systems thinking and debugging are still high-value skills."
+tags: ["career", "systems"]
+featured: false
+coverImage: null
+draft: false
+---
+
+## The narrative is wrong
+
+Every few months, someone with a large audience publishes a take: "Junior developers are dead. AI can do everything they do, faster and cheaper." And every few months, the teams I work with are still desperate for engineers who can debug a production incident, reason about system boundaries, and ship reliable code.
+
+The narrative conflates "writing code" with "engineering." AI is very good at writing code. It is not good at engineering. The difference matters.
+
+<Comparison>
+  <ComparisonSide label="What AI does well" type="neutral">
+
+- Scaffolding components and boilerplate
+- Writing unit tests from specifications
+- Translating between languages
+- Generating CRUD endpoints
+- Explaining code and documentation
+- Pattern-matching on common problems
+
+  </ComparisonSide>
+  <ComparisonSide label="What still requires humans" type="good">
+
+- Deciding whether a feature should exist
+- Debugging production incidents with incomplete logs
+- Navigating technical decisions across teams
+- Reasoning about second-order architectural effects
+- Understanding user context behind bug reports
+- Making tradeoffs between competing priorities
+
+  </ComparisonSide>
+</Comparison>
+
+## What changed
+
+Routine implementation is easier with AI tooling, but production readiness still needs human judgment.
+
+AI can write a function. It can scaffold a component. It can even write decent tests. But it cannot decide whether a feature should exist, debug a production incident at 2am with incomplete logs, navigate the politics of a technical decision across teams, or reason about second-order effects of an architecture choice.
+
+These are the skills that make engineers valuable, and they require experience — which juniors build by shipping real things.
+
+<Callout type="info">
+The junior dev role is not dying — it is evolving. The floor is higher (you need to understand systems, not just syntax), but the ceiling is also higher (you can ship more with AI assistance).
+</Callout>
+
+## The new entry-level skill stack
+
+The junior dev of 2020 needed to learn syntax, data structures, and framework basics. The junior dev of 2026 needs all of that plus a new layer:
+
+<Steps>
+  <Step number={1} title="Systems thinking">
+Understanding how components interact matters more than implementing any single component. When a junior can trace a request from the user's click through the frontend, API gateway, service layer, database, and back — they can debug almost anything. AI cannot do this because it does not understand your specific system architecture.
+  </Step>
+  <Step number={2} title="AI-augmented workflow">
+Knowing how to use AI tools effectively is itself a skill. The best junior devs use AI to scaffold quickly, then spend their time on the hard parts: edge cases, error handling, integration testing. They treat AI as a typing accelerator, not a thinking replacement.
+  </Step>
+  <Step number={3} title="Debugging and observability">
+Reading logs, tracing distributed requests, understanding metrics dashboards, forming hypotheses about failure modes. This is where juniors build genuine expertise. Every production incident they debug teaches them something AI cannot.
+  </Step>
+  <Step number={4} title="Communication and tradeoff articulation">
+The ability to explain technical decisions to non-technical stakeholders, to write clear proposals, to articulate why one approach is better than another. AI can generate plausible-sounding arguments, but it cannot navigate organizational context.
+  </Step>
+</Steps>
+
+## What did not change
+
+The teams that move fastest still depend on engineers who can isolate failures and reason about tradeoffs.
+
+The engineers I have seen grow fastest in the AI era share three traits:
+
+1. **They build in public** — shipping small projects weekly builds intuition faster than any course
+2. **They debug relentlessly** — understanding why something breaks teaches more than making it work
+3. **They write what they learn** — articulating technical decisions compounds knowledge
+
+## The career ladder shifted, not collapsed
+
+<Tabs>
+  <Tab label="Before AI (2020)">
+
+**Junior (0-2 years):** Write functions, fix bugs, learn the codebase. Ship features with guidance.
+
+**Mid (2-5 years):** Own features end-to-end. Make technical decisions within their domain. Mentor juniors.
+
+**Senior (5+ years):** Design systems. Make architectural decisions. Influence technical direction across teams.
+
+Time from junior to productive contributor: ~6 months.
+
+  </Tab>
+  <Tab label="After AI (2026)">
+
+**Junior (0-2 years):** Ship features faster with AI assistance. Focus on debugging, systems understanding, and the "why" behind decisions. Build in public.
+
+**Mid (2-5 years):** Own systems, not just features. Design AI-augmented workflows. Decide when to use AI and when human judgment is critical.
+
+**Senior (5+ years):** Design systems that incorporate AI. Evaluate build vs. buy for AI components. Set technical strategy for AI integration.
+
+Time from junior to productive contributor: ~3 months (faster shipping, same learning depth).
+
+  </Tab>
+</Tabs>
+
+The difference is not that juniors are less valuable — it is that they reach productivity faster and the bar for "productive" has shifted upward.
+
+## The hiring signal that matters
+
+If you are hiring junior devs, stop testing whether they can write a binary search from memory. Start testing whether they can:
+
+<Terminal title="junior-eval">
+{`$ cat hiring_criteria.md
+
+1. Debug a failing integration test with incomplete errors
+   Can they form hypotheses? Do they read logs systematically?
+
+2. Explain a technical tradeoff in their own project
+   Can they articulate WHY they chose approach A over B?
+
+3. Describe a production incident they observed or resolved
+   Do they understand how systems fail?
+
+4. Use AI tools effectively in a live coding session
+   Do they verify AI output? Do they understand what was generated?
+
+5. Read and reason about unfamiliar code
+   Can they trace execution flow? Do they spot failure points?`}
+</Terminal>
+
+<Callout type="warning">
+If your hiring process only tests whether candidates can write code, you are selecting for the skill that AI is best at automating. Test for the skills that remain high-value: debugging, systems reasoning, and tradeoff articulation.
+</Callout>
+
+## Practical advice
+
+Build in public, ship small systems weekly, and write what you learn. That compounds quickly.
+
+The gap between "can use AI tools" and "can build production systems" is still enormous. If you are a junior dev reading this: lean into the hard parts. The easy parts are getting automated. The hard parts are getting more valuable.
+
+<Steps>
+  <Step number={1} title="Ship one small project every week">
+Not tutorials. Actual projects that solve a real problem, even a small one. Deploy them. Show them to people. Get feedback. The reps matter more than the complexity.
+  </Step>
+  <Step number={2} title="Read production incident postmortems">
+Companies like Google, Meta, and Cloudflare publish detailed postmortems. Read them. Understand how complex systems fail. This builds intuition that takes years to develop through experience alone.
+  </Step>
+  <Step number={3} title="Write technical blog posts">
+Explaining what you learned forces you to understand it deeply. It builds a portfolio that demonstrates thinking, not just coding. Hiring managers care about how you think more than what you memorized.
+  </Step>
+  <Step number={4} title="Contribute to open source">
+Not for the contribution itself, but for the experience of reading large, unfamiliar codebases and understanding how real-world projects are structured. This is the fastest way to develop code reading skills.
+  </Step>
+</Steps>
+
+The junior dev is not dead. The junior dev who only writes code and never thinks about systems might be. But the junior dev who understands why things break, who can articulate tradeoffs, who builds and ships relentlessly — that engineer is more valuable than ever.

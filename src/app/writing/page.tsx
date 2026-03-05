@@ -1,45 +1,73 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ViewCount } from "@/components/view-count";
-import { posts } from "@/lib/content";
+import { TextReveal } from "@/components/animation/text-reveal";
+import { ScrollReveal } from "@/components/animation/scroll-reveal";
+import { BlogTagFilter } from "@/components/blog-tag-filter";
+import { getAllPostMeta, getAllTags } from "@/lib/mdx";
 
 export const metadata: Metadata = {
   title: "Writing",
   description: "Thinking out loud on production AI systems.",
 };
 
+const dateFmt = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "short",
+  day: "numeric",
+});
+
 export default function WritingPage() {
+  const posts = getAllPostMeta();
+  const tags = getAllTags();
+  const featured = posts.find((p) => p.featured) ?? posts[0];
+  const rest = posts.filter((p) => p.slug !== featured?.slug);
+
   return (
     <main className="subpage-main">
       <section className="subpage-hero">
         <div className="site-shell">
-          <p className="section-label" data-reveal>
-            {"// writing"}
-          </p>
-          <h1 data-reveal>thinking out loud</h1>
-          <p className="subpage-copy" data-reveal>
-            Opinions, postmortems, and field notes from building production AI systems.
-          </p>
+          <TextReveal variant="fade">
+            <p className="section-label">{"// writing"}</p>
+          </TextReveal>
+          <TextReveal variant="chars" stagger={0.02}>
+            <h1>thinking out loud</h1>
+          </TextReveal>
+          <TextReveal variant="words" delay={0.2}>
+            <p className="subpage-copy">
+              Opinions, postmortems, and field notes from building production AI systems.
+            </p>
+          </TextReveal>
         </div>
       </section>
 
-      <section className="section-wrap">
-        <div className="site-shell writing-list">
-          {posts.map((post) => (
-            <article key={post.slug} className="writing-card" data-reveal>
-              <Link href={`/writing/${post.slug}`} className="writing-title">
-                {post.title}
+      {featured && (
+        <section className="section-wrap">
+          <div className="site-shell">
+            <ScrollReveal>
+              <Link href={`/writing/${featured.slug}`} className="blog-featured">
+                <div className="blog-featured-cover" />
+                <div className="blog-featured-body">
+                  <div className="blog-featured-tags">
+                    {featured.tags.map((t) => (
+                      <span key={t}>{t}</span>
+                    ))}
+                  </div>
+                  <span className="blog-featured-title">{featured.title}</span>
+                  <span className="blog-featured-excerpt">{featured.excerpt}</span>
+                  <div className="blog-featured-meta">
+                    <span>{dateFmt.format(new Date(featured.date))}</span>
+                    <span>{featured.readingTime} min read</span>
+                  </div>
+                </div>
               </Link>
-              <p className="writing-excerpt">{post.excerpt}</p>
-              <div className="writing-meta">
-                <span>{post.date.toLowerCase()}</span>
-                <span>
-                  <ViewCount slug={post.slug} fallback={post.views} /> views
-                </span>
-                <span>{post.minutes} min read</span>
-              </div>
-            </article>
-          ))}
+            </ScrollReveal>
+          </div>
+        </section>
+      )}
+
+      <section className="section-wrap">
+        <div className="site-shell">
+          <BlogTagFilter posts={rest} tags={tags} />
         </div>
       </section>
     </main>

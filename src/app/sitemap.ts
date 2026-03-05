@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { posts, projects } from "@/lib/content";
+import { getAllPostMeta } from "@/lib/mdx";
+import { projects } from "@/lib/content";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://whyujjwal.com";
@@ -15,9 +16,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: path === "" ? 1 : 0.7,
   }));
 
-  const postRoutes: MetadataRoute.Sitemap = posts.map((post) => ({
+  const postRoutes: MetadataRoute.Sitemap = getAllPostMeta().map((post) => ({
     url: `${base}/writing/${post.slug}`,
-    lastModified: new Date(),
+    lastModified: new Date(post.date),
     changeFrequency: "monthly",
     priority: 0.6,
   }));

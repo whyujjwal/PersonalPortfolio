@@ -1,0 +1,190 @@
+---
+title: "I Fine-Tuned a Model and It Was Worse Than Prompting. Here Is What I Learned."
+date: "2026-02-22"
+excerpt: "Fine-tuning made outputs more confident and less correct. Better evals changed the outcome."
+tags: ["models", "evaluation"]
+featured: false
+coverImage: null
+draft: false
+---
+
+## The expensive mistake
+
+We spent three weeks curating a fine-tuning dataset, two days training, and one afternoon realizing the fine-tuned model was worse than base prompting on the queries that actually mattered.
+
+The fine-tuned model generated beautifully formatted responses that were confidently wrong on ~12% of queries. The base model with careful prompting was messy but correct on those same queries. This is the most dangerous kind of failure: **the model that sounds right and is wrong.**
+
+<StatRow>
+  <StatHighlight value="94%" label="Format score (fine-tuned)" detail="Beautiful, structured, consistent outputs" />
+  <StatHighlight value="81%" label="Correctness (fine-tuned)" detail="Confidently wrong on edge cases" />
+  <StatHighlight value="93%" label="Correctness (base + prompting)" detail="Messier format, but right when it matters" />
+</StatRow>
+
+Users trusted the fine-tuned model more initially because the outputs looked polished. Then they hit the wrong answers, and trust collapsed harder than if the model had been uncertain from the start.
+
+<Callout type="danger">
+Confidence without correctness is worse than uncertainty. Users learn to distrust a system that sounds sure but gets things wrong. Rebuilding that trust costs more than never losing it.
+</Callout>
+
+## Why fine-tuning made things worse
+
+The root cause was subtle. Our training data had a distribution mismatch with production traffic:
+
+<Comparison>
+  <ComparisonSide label="Training data" type="bad">
+
+- 2,400 carefully curated examples
+- Mostly common, straightforward queries
+- Clean, unambiguous answers
+- Uniform formatting and structure
+- ~5% edge cases
+
+  </ComparisonSide>
+  <ComparisonSide label="Production traffic" type="neutral">
+
+- 50,000+ queries per month
+- Long tail of unusual, compound queries
+- Ambiguous questions with multiple valid answers
+- Messy, incomplete user inputs
+- ~22% genuinely hard queries
+
+  </ComparisonSide>
+</Comparison>
+
+The fine-tuned model learned to be confident and well-formatted on common queries. That same confidence carried over to uncommon queries where it should have been uncertain. The base model with prompting had a natural "I am not sure" behavior on hard queries. Fine-tuning trained that uncertainty out.
+
+## The eval framework that changed everything
+
+Before we could make fine-tuning work, we needed to build the eval suite we should have built first:
+
+<Steps>
+  <Step number={1} title="Define query categories">
+We bucketed production queries into 8 categories: factual lookup, procedural how-to, comparison, troubleshooting, opinion-seeking, multi-step, ambiguous, and out-of-scope. Each category has different success criteria.
+  </Step>
+  <Step number={2} title="Build per-category eval sets">
+50 queries per category, each with a human-verified reference answer and a rubric. The rubric scores: factual correctness (0-3), completeness (0-2), uncertainty calibration (0-2), and harmful hallucination (binary). Total: 400 eval queries.
+  </Step>
+  <Step number={3} title="Establish baselines">
+Run the base model with your best prompting strategy against the full eval set. Any fine-tuning attempt must beat this baseline on every category, not just in aggregate.
+  </Step>
+  <Step number={4} title="Run comparative analysis">
+For each experiment, compare against baseline per-category. Look at regression rate — what percentage of previously-correct answers became incorrect. A model that improves 60% but regresses 15% is usually not worth shipping.
+  </Step>
+</Steps>
+
+```python title="eval_framework.py"
+from dataclasses import dataclass
+
+@dataclass
+class EvalResult:
+    category: str
+    correctness: float     # 0-3
+    completeness: float    # 0-2
+    calibration: float     # 0-2 (does it know what it doesn't know?)
+    hallucination: bool    # binary: did it make something up?
+
+def compare_models(baseline: list[EvalResult], candidate: list[EvalResult]) -> dict:
+    categories = set(r.category for r in baseline)
+    report = {}
+
+    for cat in categories:
+        base = [r for r in baseline if r.category == cat]
+        cand = [r for r in candidate if r.category == cat]
+
+        base_correct = sum(r.correctness for r in base) / len(base)
+        cand_correct = sum(r.correctness for r in cand) / len(cand)
+
+        regressions = sum(
+            1 for b, c in zip(base, cand)
+            if b.correctness >= 2 and c.correctness < 2
+        )
+
+        report[cat] = {
+            "baseline": base_correct,
+            "candidate": cand_correct,
+            "delta": cand_correct - base_correct,
+            "regressions": regressions,
+            "regression_rate": regressions / len(base),
+        }
+
+    return report
+```
+
+## The architecture that actually worked
+
+We kept base prompting for general queries and introduced fine-tuned specialist models only where we had clean, abundant training data for narrow tasks.
+
+<Tabs>
+  <Tab label="General queries">
+Base model (Claude or GPT-4) with structured prompts and retrieval grounding. The prompt includes output format constraints, domain context, and explicit uncertainty language. When the model is not sure, it says so. This handles 78% of production traffic.
+  </Tab>
+  <Tab label="Specialist routing">
+For specific, well-defined subtasks where we had 5,000+ high-quality training examples: extraction from structured documents, classification into a fixed taxonomy, and format conversion. These narrow fine-tuned models work because the task boundaries are tight.
+  </Tab>
+  <Tab label="Hybrid pipeline">
+A router classifies incoming queries and sends them to the appropriate handler. General queries go to the base model pipeline. Specialist queries go to fine-tuned models. The router itself is a lightweight classifier — fast, cheap, and easy to update.
+  </Tab>
+</Tabs>
+
+```typescript title="query-router.ts"
+type QueryHandler = "base_prompting" | "specialist_extraction" | "specialist_classification";
+
+function routeQuery(query: string, context: QueryContext): { handler: QueryHandler; confidence: number } {
+  if (context.hasAttachment && context.taskType === "extraction") {
+    return { handler: "specialist_extraction", confidence: 0.92 };
+  }
+
+  if (context.taskType === "classify" && SUPPORTED_TAXONOMIES.has(context.taxonomy)) {
+    return { handler: "specialist_classification", confidence: 0.88 };
+  }
+
+  return { handler: "base_prompting", confidence: 0.95 };
+}
+```
+
+## When fine-tuning does work
+
+Fine-tuning is not bad. It is a tool with a narrow, specific use case:
+
+| Condition | Why it matters |
+|-----------|---------------|
+| Narrow task boundaries | The model only needs to learn one thing well |
+| Abundant training data (5000+) | Enough examples to cover the real distribution |
+| Stable input distribution | Production queries look like training queries |
+| Clear success metrics | You can measure if fine-tuning helped |
+| Low hallucination risk | The task does not require factual precision |
+
+<Callout type="info">
+The sweet spot for fine-tuning: tasks where the output format is complex but the reasoning is simple. Extraction, classification, and format conversion. Not open-ended Q&A.
+</Callout>
+
+## The decision framework
+
+Before you fine-tune anything, answer these four questions:
+
+<Terminal title="fine-tune-decision">
+{`$ python should_i_finetune.py
+
+Q1: Do you have >5000 training examples matching production?
+    If NO -> stop. Use prompting + few-shot examples.
+
+Q2: Is the task boundary narrow and well-defined?
+    If NO -> stop. Broad fine-tuning causes confident hallucinations.
+
+Q3: Do you have a per-category eval suite with baselines?
+    If NO -> build it first. You cannot measure improvement without it.
+
+Q4: Is the regression budget acceptable?
+    Fine-tuning always regresses some previously-correct answers.
+    If zero regressions required -> stop. Use prompting.
+
+Result: Only proceed if all four answers are YES.`}
+</Terminal>
+
+## Takeaway
+
+Fine-tuning is a tool. It is not a strategy. Evaluation design is the strategy.
+
+Before you fine-tune anything, build the eval suite first. If you cannot measure whether fine-tuning helped, you cannot know if it helped. Most teams skip this step and end up with expensive models that feel better but perform worse.
+
+The hierarchy is clear: **prompting with good evals beats fine-tuning without evals, every time.** Build the measurement infrastructure first, then experiment from a position of knowledge, not hope.
