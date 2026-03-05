@@ -1,0 +1,72 @@
+[
+  {
+    "slug": "pytorch-to-jax-retrospective",
+    "title": "Switching from PyTorch to JAX: A Retrospective.",
+    "date": "2026-04-01",
+    "excerpt": "JAX improved a narrow part of the stack, but migration cost was real and easy to underestimate.",
+    "tags": [
+      "models",
+      "infra"
+    ],
+    "featured": false,
+    "coverImage": null,
+    "draft": false,
+    "readingTime": 7
+  },
+  {
+    "slug": "junior-dev-death-exaggerated",
+    "title": "The Death of the Junior Dev Is Exaggerated.",
+    "date": "2026-03-10",
+    "excerpt": "Automation shifts entry-level work, but systems thinking and debugging are still high-value skills.",
+    "tags": [
+      "career",
+      "systems"
+    ],
+    "featured": false,
+    "coverImage": null,
+    "draft": false,
+    "readingTime": 6
+  },
+  {
+    "slug": "agents-built-wrong",
+    "title": "The AI Agent Hype Is Real But Everyone Is Building Them Wrong.",
+    "date": "2026-03-01",
+    "excerpt": "Agents fail because teams design for happy paths and call it autonomy.",
+    "tags": [
+      "agents",
+      "systems"
+    ],
+    "featured": false,
+    "coverImage": null,
+    "draft": false,
+    "readingTime": 6
+  },
+  {
+    "slug": "finetune-worse-than-prompting",
+    "title": "I Fine-Tuned a Model and It Was Worse Than Prompting. Here Is What I Learned.",
+    "date": "2026-02-22",
+    "excerpt": "Fine-tuning made outputs more confident and less correct. Better evals changed the outcome.",
+    "tags": [
+      "models",
+      "evaluation"
+    ],
+    "featured": false,
+    "coverImage": null,
+    "draft": false,
+    "readingTime": 6
+  },
+  {
+    "slug": "rag-production-garbage",
+    "title": "Most RAG Systems in Production Are Garbage. Here Is Why.",
+    "date": "2026-02-15",
+    "excerpt": "The real failure mode is not hallucination. It is retrieval confidence that nobody measures.",
+    "tags": [
+      "rag",
+      "llmops"
+    ],
+    "featured": true,
+    "coverImage": null,
+    "draft": false,
+    "readingTime": 6
+  }
+]
