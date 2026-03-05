@@ -148,7 +148,7 @@ export function CommandMenu({ posts }: { posts: PostItem[] }) {
     }));
 
     return [...core, ...postActions, ...projectActions];
-  }, [copyMeta, router]);
+  }, [copyMeta, router, posts]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 type TocItem = { id: string; text: string; level: number };
 
@@ -8,11 +8,12 @@ export function TableOfContents() {
   const [headings, setHeadings] = useState<TocItem[]>([]);
   const [activeId, setActiveId] = useState("");
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const article = document.querySelector(".mdx-article");
     if (!article) return;
 
     const els = article.querySelectorAll("h2, h3");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHeadings(
       Array.from(els).map((el) => ({
         id: el.id,
@@ -20,7 +21,13 @@ export function TableOfContents() {
         level: el.tagName === "H2" ? 2 : 3,
       }))
     );
+  }, []);
 
+  useEffect(() => {
+    const article = document.querySelector(".mdx-article");
+    if (!article) return;
+
+    const els = article.querySelectorAll("h2, h3");
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries.find((e) => e.isIntersecting);

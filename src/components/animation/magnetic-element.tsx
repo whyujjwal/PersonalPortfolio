@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, type ReactNode } from "react";
+import { useRef, useCallback, type ReactNode } from "react";
 import { motion, useSpring, useMotionValue } from "framer-motion";
 
 interface MagneticElementProps {
@@ -16,7 +16,6 @@ export function MagneticElement({
   strength = 8,
 }: MagneticElementProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [isHovered, setIsHovered] = useState(false);
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -42,7 +41,6 @@ export function MagneticElement({
   );
 
   const handleMouseLeave = useCallback(() => {
-    setIsHovered(false);
     x.set(0);
     y.set(0);
   }, [x, y]);
@@ -52,7 +50,7 @@ export function MagneticElement({
       ref={ref}
       className={className}
       style={{ x: springX, y: springY, display: "inline-block" }}
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={() => {}}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       whileHover={{ scale: 1.03 }}

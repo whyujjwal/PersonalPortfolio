@@ -16,6 +16,7 @@ export function CustomCursor() {
       "ontouchstart" in window;
 
     if (isTouchDevice) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsTouch(false);
 
     const prefersReducedMotion = window.matchMedia(
